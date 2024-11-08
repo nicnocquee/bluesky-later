@@ -3,6 +3,11 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 
 export default defineConfig({
+  define: {
+    "process.env.STORAGE_MODE": JSON.stringify(
+      process.env.STORAGE_MODE || "local"
+    ),
+  },
   plugins: [react()],
   publicDir: "public", // This is already the default
   optimizeDeps: {

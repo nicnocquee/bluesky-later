@@ -54,7 +54,7 @@ function App() {
   }
 
   const handleLogout = async () => {
-    await db.credentials.clear(); // Clear credentials from the database
+    await db.deleteCredentials(); // Clear credentials from the database
     setIdentifier(undefined); // Update authenticated state
   };
 

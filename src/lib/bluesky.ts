@@ -33,18 +33,13 @@ export const agent = new BskyAgent({
 });
 
 export async function getStoredCredentials() {
-  const creds = await db.credentials.toArray();
-  return creds.at(0);
+  const creds = await db.getCredentials();
+  return creds;
 }
 
 export async function login(identifier: string, password: string) {
   await agent.login({ identifier, password });
-  await db.credentials.clear();
-  await db.credentials.add({
-    identifier,
-    password,
-    id: 0,
-  });
+  await db.setCredentials({ identifier, password });
 }
 
 async function fetchUrlMetadata(url: string) {
@@ -144,12 +139,7 @@ export type UploadImageResult = Awaited<ReturnType<typeof uploadImage>>;
 export type BlobRefType = UploadImageResult["blobRef"];
 
 export async function checkScheduledPosts() {
-  const now = new Date();
-  const pendingPosts = await db.posts
-    .where("status")
-    .equals("pending")
-    .and((post) => post.scheduledFor <= now)
-    .toArray();
+  const pendingPosts = await db.getPendingPosts();
 
   const creds = await getStoredCredentials();
   if (!creds) return;
@@ -216,13 +206,10 @@ export async function checkScheduledPosts() {
         }
 
         await agent.post(postData);
-        await db.posts.update(post.id!, { status: "published" });
+        await db.updatePost(post.id!, { status: "published" });
       } catch (error: unknown) {
         console.error("Post creation error:", error);
-        await db.posts.update(post.id!, {
-          status: "failed",
-          error: error instanceof Error ? error.message : String(error),
-        });
+        await db.updatePost(post.id!, { status: "published" });
       }
     }
   } catch (error: unknown) {
