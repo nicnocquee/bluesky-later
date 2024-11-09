@@ -37,13 +37,12 @@ export function PostScheduler() {
     }
 
     try {
-      await db.posts.add({
+      await db.createPost({
         content,
         scheduledFor,
         status: "pending",
-        createdAt: new Date(),
         image,
-        url: firstUrl, // Add this
+        url: firstUrl,
       });
 
       toast.success("Post scheduled successfully!");

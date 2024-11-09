@@ -5,22 +5,23 @@ import { AlertCircle, CheckCircle, Clock, Image, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function ScheduledPosts() {
-  const posts = useLiveQuery(() =>
-    db.posts.orderBy("scheduledFor").reverse().toArray()
-  );
+  const posts = useLiveQuery(() => db.getAllPosts());
 
   const clearScheduledPosts = async () => {
     if (window.confirm("Are you sure you want to clear all scheduled posts?")) {
-      await db.posts.clear();
+      // Delete all posts one by one since there's no clear method in the interface
+      const allPosts = await db.getAllPosts();
+      await Promise.all(
+        allPosts.map((post) => post.id && db.deletePost(post.id))
+      );
     }
   };
 
   const deletePost = async (id: number) => {
     if (window.confirm("Are you sure you want to delete this post?")) {
-      await db.posts.delete(id);
+      await db.deletePost(id);
     }
   };
-
   if (!posts) return null;
 
   return (
