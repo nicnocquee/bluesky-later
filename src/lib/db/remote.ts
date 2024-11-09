@@ -1,4 +1,5 @@
 // src/lib/db/remote.ts
+import { parseISO } from "date-fns";
 import type { DatabaseInterface, Post, Credentials } from "./types";
 
 export class RemoteDB implements DatabaseInterface {
@@ -21,7 +22,14 @@ export class RemoteDB implements DatabaseInterface {
   }
 
   async getAllPosts(): Promise<Post[]> {
-    return this.fetchApi("/posts");
+    return this.fetchApi("/posts").then((posts) => {
+      return posts.map((p: Record<string, unknown>) => {
+        return {
+          ...p,
+          scheduledFor: parseISO(p.scheduled_for as string),
+        };
+      });
+    });
   }
 
   async createPost(post: Omit<Post, "id" | "createdAt">): Promise<Post> {

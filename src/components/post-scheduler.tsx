@@ -5,8 +5,10 @@ import toast from "react-hot-toast";
 import { format, addHours } from "date-fns";
 import { ImageUpload } from "./image-upload";
 import { OfflineInfo } from "./offline-info";
+import { useLocalStorage } from "./hooks/use-local-storage";
 
 export function PostScheduler() {
+  const [, setLastUpdated] = useLocalStorage("lastUpdated");
   const defaultDate = addHours(new Date(), 24);
   const [content, setContent] = useState("");
   const [scheduledDate, setScheduledDate] = useState(
@@ -52,6 +54,7 @@ export function PostScheduler() {
       setScheduledDate(format(defaultDate, "yyyy-MM-dd"));
       setScheduledTime(format(defaultDate, "HH:mm"));
       setImage(undefined);
+      setLastUpdated(new Date().toISOString());
     } catch (error: unknown) {
       console.log(error);
       toast.error("Failed to schedule post");

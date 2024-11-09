@@ -1,8 +1,10 @@
-// api/index.ts
 import express from "express";
 import { Pool } from "pg";
 import cors from "cors";
 import { BskyAgent } from "@atproto/api";
+import dotenv from "dotenv";
+
+dotenv.config({ path: "../.env" });
 
 const app = express();
 const port = 3000;
@@ -36,8 +38,8 @@ async function initDB() {
   `);
 }
 
-// API Routes
 app.get("/api/posts/pending", async (req, res) => {
+  console.log("Getting pending posts");
   const result = await pool.query(
     "SELECT * FROM posts WHERE status = $1 AND scheduled_for <= NOW()",
     ["pending"]
@@ -45,7 +47,14 @@ app.get("/api/posts/pending", async (req, res) => {
   res.json(result.rows);
 });
 
+app.get("/api/posts", async (req, res) => {
+  console.log("Getting all posts");
+  const result = await pool.query("SELECT * FROM posts");
+  res.json(result.rows);
+});
+
 app.post("/api/posts", async (req, res) => {
+  console.log("Creating post");
   const { content, scheduledFor, image } = req.body;
   const result = await pool.query(
     "INSERT INTO posts (content, scheduled_for, status, image) VALUES ($1, $2, $3, $4) RETURNING *",
@@ -54,8 +63,16 @@ app.post("/api/posts", async (req, res) => {
   res.json(result.rows[0]);
 });
 
+app.delete("/api/posts/:id", async (req, res) => {
+  console.log("Deleting post");
+  const { id } = req.params;
+  await pool.query("DELETE FROM posts WHERE id = $1", [id]);
+  res.json({ success: true });
+});
+
 // Cron endpoint
 app.post("/api/cron/check-posts", async (req, res) => {
+  console.log("Checking posts");
   const authHeader = req.headers.authorization;
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return res.status(401).json({ error: "Unauthorized" });
@@ -97,8 +114,25 @@ app.post("/api/cron/check-posts", async (req, res) => {
   res.json({ success: true });
 });
 
-// Add this route to api/index.ts
+app.get("/api/credentials", async (req, res) => {
+  console.log("Getting credentials");
+  const result = await pool.query("SELECT * FROM credentials LIMIT 1");
+  res.json(result.rows[0]);
+});
+
+app.post("/api/credentials", async (req, res) => {
+  console.log("Setting credentials");
+  const { identifier, password } = req.body;
+  await pool.query("DELETE FROM credentials");
+  await pool.query(
+    "INSERT INTO credentials (identifier, password) VALUES ($1, $2)",
+    [identifier, password]
+  );
+  res.json({ success: true });
+});
+
 app.delete("/api/credentials", async (req, res) => {
+  console.log("Deleting credentials");
   await pool.query("DELETE FROM credentials");
   res.json({ success: true });
 });
