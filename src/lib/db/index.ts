@@ -3,9 +3,9 @@ import type { DatabaseInterface } from "./types";
 import { LocalDB } from "./local";
 import { RemoteDB } from "./remote";
 
-function createDatabase(): DatabaseInterface {
+export function createDatabase(credentials?: string): DatabaseInterface {
   if (import.meta.env.VITE_STORAGE_MODE === "remote") {
-    return new RemoteDB();
+    return new RemoteDB(credentials);
   }
   return new LocalDB();
 }

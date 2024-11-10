@@ -1,5 +1,5 @@
 import { BskyAgent, RichText } from "@atproto/api";
-import { db } from "./db";
+import { createDatabase, db } from "./db";
 
 interface ImageInfo {
   url?: string;
@@ -138,10 +138,11 @@ export async function uploadImage(file: File) {
 export type UploadImageResult = Awaited<ReturnType<typeof uploadImage>>;
 export type BlobRefType = UploadImageResult["blobRef"];
 
-export async function checkScheduledPosts() {
-  const pendingPosts = await db.getPendingPosts();
+export async function checkScheduledPosts(workerCredentials?: string) {
+  const workerDb = workerCredentials ? createDatabase(workerCredentials) : db;
+  const pendingPosts = await workerDb.getPendingPosts();
 
-  const creds = await getStoredCredentials();
+  const creds = await workerDb.getCredentials();
   if (!creds) return;
 
   try {

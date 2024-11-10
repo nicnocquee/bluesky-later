@@ -1,16 +1,23 @@
 // src/lib/db/remote.ts
 import { parseISO } from "date-fns";
 import type { DatabaseInterface, Post, Credentials } from "./types";
+import { makeAuthenticatedRequest } from "../api";
 
 export class RemoteDB implements DatabaseInterface {
   private apiUrl: string;
+  private credentials: string | null;
 
-  constructor() {
+  constructor(credentials?: string) {
     this.apiUrl = import.meta.env.VITE_API_URL;
+    this.credentials = credentials ?? localStorage.getItem("apiCredentials");
   }
 
   private async fetchApi(endpoint: string, options?: RequestInit) {
-    const response = await fetch(`${this.apiUrl}/api${endpoint}`, options);
+    const response = await makeAuthenticatedRequest(
+      `${this.apiUrl}/api${endpoint}`,
+      options,
+      this.credentials || undefined // You'll need to add this as a class property
+    );
     if (!response.ok) {
       throw new Error(`API Error: ${response.statusText}`);
     }
