@@ -132,7 +132,7 @@ export function PostScheduler() {
           <Send className="h-5 w-5" />
           Schedule Post
         </button>
-        <OfflineInfo />
+        {import.meta.env.VITE_STORAGE_MODE !== "remote" && <OfflineInfo />}
       </form>
     </div>
   );

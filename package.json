@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "VITE_STORAGE_MODE=local vite",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
