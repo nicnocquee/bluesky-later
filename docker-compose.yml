@@ -4,9 +4,9 @@ services:
   postgres:
     image: postgres:15-alpine
     environment:
-      POSTGRES_USER: bluesky
-      POSTGRES_PASSWORD: bluesky
-      POSTGRES_DB: bluesky_scheduler
+      POSTGRES_USER: ${POSTGRES_USER:-bluesky}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bluesky}
+      POSTGRES_DB: ${POSTGRES_DB:-bluesky_scheduler}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -17,8 +17,8 @@ services:
       context: .
       dockerfile: Dockerfile.api
     environment:
-      DATABASE_URL: postgres://bluesky:bluesky@postgres:5432/bluesky_scheduler
-      CRON_SECRET: your-secret-here
+      DATABASE_URL: ${DATABASE_URL:-postgres://bluesky:bluesky@postgres:5432/bluesky_scheduler}
+      CRON_SECRET: ${CRON_SECRET:-your-secret-here}
     ports:
       - "3000:3000"
     depends_on:
@@ -33,6 +33,21 @@ services:
       - "8080:80"
     depends_on:
       - api
+
+  cron:
+    image: alpine
+    depends_on:
+      - api
+    environment:
+      CRON_SECRET: ${CRON_SECRET:-your-secret-here}
+    command: >
+      /bin/sh -c "
+      apk add --no-cache curl &&
+      while true; do
+        curl -X POST -H 'Authorization: Bearer $${CRON_SECRET}' http://api:3000/api/cron/check-posts;
+        sleep 60;
+      done
+      "
 
 volumes:
   postgres_data:
