@@ -11,7 +11,13 @@ export function ScheduledPosts() {
 
   const fetchPosts = useCallback(async () => {
     const fetchedPosts = await db.getAllPosts();
-    setPosts(fetchedPosts);
+    setPosts(
+      fetchedPosts.sort(
+        (a, b) =>
+          new Date(b.scheduledFor).getTime() -
+          new Date(a.scheduledFor).getTime()
+      )
+    );
   }, []);
 
   useEffect(() => {
