@@ -22,6 +22,8 @@ export function ScheduledPosts() {
 
   useEffect(() => {
     fetchPosts();
+    const interval = setInterval(() => fetchPosts(), 60000);
+    return () => clearInterval(interval);
   }, [fetchPosts, lastUpdated]);
 
   const clearScheduledPosts = useCallback(async () => {
