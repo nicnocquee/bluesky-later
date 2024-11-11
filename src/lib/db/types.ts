@@ -1,26 +1,49 @@
-// src/lib/db/types.ts
+import { RichText } from "@atproto/api";
+
 export interface Post {
   id?: number;
-  content: string;
   scheduledFor: Date;
   status: "pending" | "published" | "failed";
   error?: string;
   createdAt: Date;
-  url?: string;
-  image?: {
-    url: string;
-    type: string;
-    alt?: string;
-    blobRef?: {
-      $type: string;
-      ref: {
-        $link: string;
+  data: PostData;
+}
+
+export type BlobRefType = {
+  $type: string;
+  ref: {
+    $link: string;
+  };
+  mimeType: string;
+  size: number;
+};
+
+export type PostData = {
+  text: string;
+  facets?: RichText["facets"];
+  createdAt: string;
+  embed?: {
+    $type: string;
+    images?: Array<{
+      alt?: string;
+      localUrl?: string;
+      image: {
+        $type: string;
+        ref: {
+          $link: string;
+        };
+        mimeType: string;
+        size: number;
       };
-      mimeType: string;
-      size: number;
+    }>;
+    external?: {
+      uri: string;
+      title: string;
+      description: string;
+      thumb?: BlobRefType;
     };
   };
-}
+};
 
 export interface Credentials {
   id: number;

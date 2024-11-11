@@ -64,6 +64,7 @@ export function ScheduledPosts() {
 
       <div className="space-y-4">
         {posts.map((post) => {
+          const firstImage = post.data.embed?.images?.[0];
           return (
             <div
               key={post.id}
@@ -71,12 +72,12 @@ export function ScheduledPosts() {
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
-                  <p className="text-gray-900 mb-2">{post.content}</p>
-                  {post.image && (
+                  <p className="text-gray-900 mb-2">{post.data.text}</p>
+                  {firstImage && (
                     <div className="mb-2">
                       <img
-                        src={post.image.url}
-                        alt={post.image.alt}
+                        src={firstImage.image.ref.$link}
+                        alt={firstImage.alt}
                         className="w-32 h-32 object-cover rounded-lg"
                       />
                     </div>
@@ -87,7 +88,7 @@ export function ScheduledPosts() {
                       Scheduled for{" "}
                       {format(post.scheduledFor, "MMM d, yyyy h:mm a")}
                     </span>
-                    {post.image && (
+                    {firstImage && (
                       <>
                         <span className="mx-1">•</span>
                         <Image className="h-4 w-4" />

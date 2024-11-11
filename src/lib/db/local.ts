@@ -1,4 +1,3 @@
-// src/lib/db/local.ts
 import Dexie, { type Table } from "dexie";
 import type { DatabaseInterface, Post, Credentials } from "./types";
 
@@ -12,8 +11,8 @@ class BlueSkyDB extends Dexie {
 
   constructor() {
     super("blueSkyDB");
-    this.version(1).stores({
-      posts: "++id, scheduledFor, status",
+    this.version(2).stores({
+      posts: "++id, scheduledFor, status, data",
       credentials: "++id, identifier",
     });
   }

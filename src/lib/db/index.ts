@@ -1,4 +1,3 @@
-// src/lib/db/index.ts
 import type { DatabaseInterface } from "./types";
 import { LocalDB } from "./local";
 import { RemoteDB } from "./remote";

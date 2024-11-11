@@ -1,7 +1,8 @@
 import React, { useRef, useState } from "react";
 import { ImagePlus, X } from "lucide-react";
-import { BlobRefType, uploadImage } from "../lib/bluesky";
+import { uploadImage } from "../lib/bluesky";
 import toast from "react-hot-toast";
+import { BlobRefType } from "@/lib/db/types";
 
 interface ImageUploadProps {
   onImageSelect: (imageData: {

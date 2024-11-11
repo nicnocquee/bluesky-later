@@ -6,6 +6,8 @@ import { format, addHours } from "date-fns";
 import { ImageUpload } from "./image-upload";
 import { OfflineInfo } from "./offline-info";
 import { useLocalStorage } from "./hooks/use-local-storage";
+import { getPostData } from "@/lib/bluesky";
+import { BlobRefType } from "@/lib/db/types";
 
 export function PostScheduler() {
   const [, setLastUpdated] = useLocalStorage("lastUpdated");
@@ -18,8 +20,10 @@ export function PostScheduler() {
     format(defaultDate, "HH:mm")
   );
   const [image, setImage] = useState<
-    { url: string; type: string; alt: string } | undefined
+    | { url: string; type: string; alt: string; blobRef?: BlobRefType }
+    | undefined
   >();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,12 +43,16 @@ export function PostScheduler() {
     }
 
     try {
-      await db.createPost({
+      setIsLoading(true);
+      const postData = await getPostData({
         content,
+        url: firstUrl,
+        image,
+      });
+      await db.createPost({
+        data: postData,
         scheduledFor,
         status: "pending",
-        image,
-        url: firstUrl,
       });
 
       toast.success("Post scheduled successfully!");
@@ -55,9 +63,11 @@ export function PostScheduler() {
       setScheduledTime(format(defaultDate, "HH:mm"));
       setImage(undefined);
       setLastUpdated(new Date().toISOString());
+      setIsLoading(false);
     } catch (error: unknown) {
       console.log(error);
       toast.error("Failed to schedule post");
+      setIsLoading(false);
     }
   };
 
@@ -70,6 +80,7 @@ export function PostScheduler() {
             Post Content
           </label>
           <textarea
+            disabled={isLoading}
             value={content}
             onChange={(e) => setContent(e.target.value)}
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[150px]"
@@ -101,6 +112,7 @@ export function PostScheduler() {
               <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
               <input
                 type="date"
+                disabled={isLoading}
                 value={scheduledDate}
                 onChange={(e) => setScheduledDate(e.target.value)}
                 className="pl-10 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -117,6 +129,7 @@ export function PostScheduler() {
               <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
               <input
                 type="time"
+                disabled={isLoading}
                 value={scheduledTime}
                 onChange={(e) => setScheduledTime(e.target.value)}
                 className="pl-10 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -126,11 +139,12 @@ export function PostScheduler() {
         </div>
 
         <button
+          disabled={isLoading}
           type="submit"
-          className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+          className="w-full bg-blue-600 disabled:bg-blue-400 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
         >
           <Send className="h-5 w-5" />
-          Schedule Post
+          {isLoading ? "Scheduling..." : "Schedule Post"}
         </button>
         {import.meta.env.VITE_STORAGE_MODE !== "remote" && <OfflineInfo />}
       </form>

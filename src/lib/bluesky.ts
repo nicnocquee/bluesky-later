@@ -1,5 +1,6 @@
 import { BskyAgent, RichText } from "@atproto/api";
 import { createDatabase, db } from "./db";
+import { BlobRefType, PostData } from "./db/types";
 
 interface ImageInfo {
   url?: string;
@@ -136,7 +137,6 @@ export async function uploadImage(file: File) {
 }
 
 export type UploadImageResult = Awaited<ReturnType<typeof uploadImage>>;
-export type BlobRefType = UploadImageResult["blobRef"];
 
 export async function checkScheduledPosts(workerCredentials?: string) {
   const workerDb = workerCredentials ? createDatabase(workerCredentials) : db;
@@ -153,60 +153,7 @@ export async function checkScheduledPosts(workerCredentials?: string) {
 
     for (const post of pendingPosts) {
       try {
-        // Create a RichText instance
-        const richText = new RichText({ text: post.content });
-        // Process the text to detect mentions, links, etc.
-        await richText.detectFacets(agent);
-
-        const postData: {
-          text: string;
-          facets?: RichText["facets"];
-          createdAt: string;
-          embed?: {
-            $type: string;
-            images?: Array<{
-              alt: string;
-              image: {
-                $type: string;
-                ref: {
-                  $link: string;
-                };
-                mimeType: string;
-                size: number;
-              };
-            }>;
-            external?: {
-              uri: string;
-              title: string;
-              description: string;
-              thumb?: BlobRefType;
-            };
-          };
-        } = {
-          text: richText.text,
-          facets: richText.facets,
-          createdAt: new Date().toISOString(),
-        };
-
-        if (post.url) {
-          const urlEmbed = await fetchUrlMetadata(post.url);
-          postData.embed = {
-            $type: "app.bsky.embed.external",
-            external: urlEmbed,
-          };
-        } else if (post.image?.blobRef) {
-          postData.embed = {
-            $type: "app.bsky.embed.images",
-            images: [
-              {
-                alt: post.image.alt || "",
-                image: post.image.blobRef,
-              },
-            ],
-          };
-        }
-
-        await agent.post(postData);
+        await agent.post(post.data);
         await db.updatePost(post.id!, { status: "published" });
       } catch (error: unknown) {
         console.error("Post creation error:", error);
@@ -217,3 +164,49 @@ export async function checkScheduledPosts(workerCredentials?: string) {
     console.error("Failed to process scheduled posts:", error);
   }
 }
+
+export const getPostData = async ({
+  content,
+  url,
+  image,
+}: {
+  content: string;
+  url?: string;
+  image?: {
+    blobRef?: BlobRefType;
+    alt?: string;
+    url?: string;
+  };
+}): Promise<PostData> => {
+  // Create a RichText instance
+  const richText = new RichText({ text: content });
+  // Process the text to detect mentions, links, etc.
+  await richText.detectFacets(agent);
+
+  const postData: PostData = {
+    text: richText.text,
+    facets: richText.facets,
+    createdAt: new Date().toISOString(),
+  };
+
+  if (url) {
+    const urlEmbed = await fetchUrlMetadata(url);
+    postData.embed = {
+      $type: "app.bsky.embed.external",
+      external: urlEmbed,
+    };
+  } else if (image?.blobRef) {
+    postData.embed = {
+      $type: "app.bsky.embed.images",
+      images: [
+        {
+          alt: image.alt || "",
+          image: image.blobRef,
+          localUrl: image.url,
+        },
+      ],
+    };
+  }
+
+  return postData;
+};
