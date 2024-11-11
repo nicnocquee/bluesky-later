@@ -2,31 +2,15 @@ import { BskyAgent, RichText } from "@atproto/api";
 import { createDatabase, db } from "./db";
 import { BlobRefType, PostData } from "./db/types";
 
-interface ImageInfo {
-  url?: string;
-  type: string;
-  size: number;
-  height: number;
-  width: number;
-  size_pretty: string;
-}
-
 interface WebsiteData {
   lang: string;
   author: string;
   title: string;
   publisher: string;
-  image?: ImageInfo;
+  image?: string;
   url: string;
   description: string;
   date: string;
-  logo: ImageInfo;
-}
-
-interface WebsiteResponse {
-  status: "success";
-  data?: WebsiteData;
-  statusCode: number;
 }
 
 export const agent = new BskyAgent({
@@ -45,58 +29,48 @@ export async function login(identifier: string, password: string) {
 
 async function fetchUrlMetadata(url: string) {
   try {
-    const microlinkResponse = await fetch(
-      `https://api.microlink.io?meta=true&url=${encodeURIComponent(url)}`,
-      {
-        headers: import.meta.env.MICROLINK_API_KEY
-          ? {
-              "x-api-key": import.meta.env.MICROLINK_API_KEY,
-            }
-          : undefined,
-      }
+    const metadataFetcherResponse = await fetch(
+      `${import.meta.env.VITE_METADATA_FETCHER_URL}${url}`
     );
-    const microlinkResponseJson =
-      (await microlinkResponse.json()) as WebsiteResponse;
+    const metadataFetcherResponseJson =
+      (await metadataFetcherResponse.json()) as WebsiteData;
 
-    if (microlinkResponseJson.status !== "success") {
+    if (!metadataFetcherResponseJson) {
       throw new Error("Failed to fetch metadata");
     }
 
-    if (!microlinkResponseJson.data) {
-      throw new Error("Failed to fetch metadata");
-    }
+    const { title, description, image } = metadataFetcherResponseJson;
 
-    const {
-      data: { title, description, image },
-    } = microlinkResponseJson;
-
+    console.log(image);
     let websiteImage: BlobRefType | undefined = undefined;
+    let websiteImageLocalUrl: string | undefined = undefined;
     try {
-      if (image && image.url) {
-        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(
-          image.url
-        )}`;
+      if (image) {
+        const proxyUrl = `${import.meta.env.VITE_IMAGE_PROXY_URL}${image}`;
         const imageResponse = await fetch(proxyUrl);
         if (!imageResponse.ok) {
           throw new Error(`Failed to fetch image: ${imageResponse.status}`);
         }
         const imageBlob = await imageResponse.blob();
-        const extension = image.type?.split("/")[1] || "jpg";
-        const file = new File([imageBlob], `preview.${extension}`, {
-          type: image.type,
+        const file = new File([imageBlob], `preview.${imageBlob.type}`, {
+          type: imageBlob.type,
         });
         const uploadResult = await uploadImage(file);
         websiteImage = uploadResult.blobRef;
+        websiteImageLocalUrl = URL.createObjectURL(file);
       }
     } catch (error) {
       console.error("Failed to fetch image:", error);
     }
+
+    console.log(websiteImage);
 
     return {
       uri: url,
       title: title || url,
       description: description || "",
       thumb: websiteImage,
+      websiteImageLocalUrl,
     };
   } catch (error) {
     console.error("Error fetching metadata:", error);
@@ -190,7 +164,8 @@ export const getPostData = async ({
   };
 
   if (url) {
-    const urlEmbed = await fetchUrlMetadata(url);
+    const { websiteImageLocalUrl, ...urlEmbed } = await fetchUrlMetadata(url);
+    console.log(websiteImageLocalUrl);
     postData.embed = {
       $type: "app.bsky.embed.external",
       external: urlEmbed,

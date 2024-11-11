@@ -64,6 +64,7 @@ export function ScheduledPosts() {
 
       <div className="space-y-4">
         {posts.map((post) => {
+          if (!post.data) return null;
           const firstImage = post.data.embed?.images?.[0];
           return (
             <div

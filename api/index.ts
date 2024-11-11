@@ -96,13 +96,11 @@ async function initDB() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS posts (
       id SERIAL PRIMARY KEY,
-      content TEXT NOT NULL,
+      data JSONB NOT NULL,
       scheduled_for TIMESTAMP WITH TIME ZONE NOT NULL,
       status TEXT NOT NULL,
       error TEXT,
-      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-      url TEXT,
-      image JSONB
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     );
 
     CREATE TABLE IF NOT EXISTS credentials (
@@ -137,10 +135,10 @@ app.get("/api/posts", async (req, res) => {
 
 app.post("/api/posts", async (req, res) => {
   console.log("Creating post");
-  const { content, scheduledFor, image } = req.body;
+  const { data, scheduledFor } = req.body;
   const result = await pool.query(
-    "INSERT INTO posts (content, scheduled_for, status, image) VALUES ($1, $2, $3, $4) RETURNING *",
-    [content, scheduledFor, "pending", image]
+    "INSERT INTO posts (data, scheduled_for, status) VALUES ($1, $2, $3) RETURNING *",
+    [data, scheduledFor, "pending"]
   );
   res.json(result.rows[0]);
 });
@@ -177,7 +175,7 @@ app.post("/api/cron/check-posts", async (req, res) => {
         password: creds.password,
       });
 
-      await agent.post({ text: post.content });
+      await agent.post(post.data);
 
       await pool.query("UPDATE posts SET status = $1 WHERE id = $2", [
         "published",

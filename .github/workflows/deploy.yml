@@ -20,6 +20,9 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    env:
+      VITE_METADATA_FETCHER_URL: ${{ vars.METADATA_FETCHER_URL }}
+      VITE_IMAGE_PROXY_URL: ${{ vars.IMAGE_PROXY_URL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

@@ -49,6 +49,11 @@ export function PostScheduler() {
         url: firstUrl,
         image,
       });
+      console.log({
+        data: postData,
+        scheduledFor,
+        status: "pending",
+      });
       await db.createPost({
         data: postData,
         scheduledFor,
