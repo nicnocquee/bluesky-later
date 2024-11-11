@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "dev:remote": "docker-compose -f docker-compose.dev.yml up -d postgres && concurrently \"vite\" \"cd api && npm run dev\"",
+    "dev:remote": "docker-compose -f docker-compose.dev.yml up -d postgres cron && concurrently \"vite\" \"cd api && npm run dev\"",
     "dev:down": "docker-compose -f docker-compose.dev.yml down",
     "prod": "docker-compose up --build",
     "prod:down": "docker-compose down"

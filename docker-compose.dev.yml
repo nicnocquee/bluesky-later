@@ -11,5 +11,20 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  cron:
+    image: alpine
+    environment:
+      CRON_SECRET: ${CRON_SECRET:-your-secret-here}
+    command: >
+      /bin/sh -c "
+      apk add --no-cache curl &&
+      while true; do
+        echo 'Making cron request...' &&
+        curl -v -X POST -H \"Authorization: Bearer \$CRON_SECRET\" http://host.docker.internal:3000/api/cron/check-posts &&
+        echo 'Sleeping for 60 seconds...' &&
+        sleep 60;
+      done
+      "
+
 volumes:
   postgres_data:
