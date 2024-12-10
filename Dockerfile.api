@@ -3,10 +3,15 @@ FROM node:18-alpine
 
 WORKDIR /app
 
+
+RUN apk add curl
+
 COPY api/package*.json ./
 RUN npm ci --legacy-peer-deps
 
 COPY api .
 RUN npm run build
+
+EXPOSE 3000
 
 CMD ["npm", "start"]
