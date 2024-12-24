@@ -19,3 +19,5 @@ RUN VITE_STORAGE_MODE=$VITE_STORAGE_MODE \
 FROM nginx:alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.config /etc/nginx/conf.d/default.conf
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 CMD curl -f http://localhost:3000/health || exit 1
+EXPOSE 80
