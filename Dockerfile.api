@@ -3,10 +3,13 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+# Install pnpm
+RUN npm install -g pnpm
+
 COPY api/package*.json ./
-RUN npm ci --legacy-peer-deps
+RUN pnpm install --frozen-lockfile
 
 COPY api .
-RUN npm run build
+RUN pnpm run build
 
-CMD ["npm", "start"]
+CMD ["pnpm", "start"]

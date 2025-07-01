@@ -87,6 +87,19 @@ Bluesky unfortunately does not automatically generate a social card for the webs
 - External Services: Metadata fetcher, Image proxy, Open AI
 - Docker
 
+## Development
+
+### Testing
+The project includes comprehensive testing with Vitest and React Testing Library, covering utilities, UI components, custom hooks, and business logic. See the [Testing Guide](docs/testing.md) for detailed information on running tests, writing new tests, and testing patterns.
+
+```bash
+# Run all tests
+pnpm test
+
+# Run tests in watch mode
+pnpm test:watch
+```
+
 ## License
 
 MIT
