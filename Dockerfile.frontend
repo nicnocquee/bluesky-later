@@ -1,10 +1,11 @@
 FROM node:20 AS builder
 
 WORKDIR /app
+# Install pnpm
+RUN npm install -g pnpm
 COPY package*.json ./
 ENV ROLLUP_SKIP_NODE_RESOLVE=true
-RUN npm ci --legacy-peer-deps --platform=linux --arch=x64 \
-    && npm rebuild @rollup/rollup-linux-x64-gnu
+RUN pnpm install --frozen-lockfile --platform=linux --arch=x64
 COPY . .
 ARG VITE_STORAGE_MODE=remote
 ARG VITE_API_URL=http://api:3000
@@ -14,7 +15,7 @@ RUN VITE_STORAGE_MODE=$VITE_STORAGE_MODE \
     VITE_API_URL=$VITE_API_URL \
     VITE_METADATA_FETCHER_URL=$VITE_METADATA_FETCHER_URL \
     VITE_IMAGE_PROXY_URL=$VITE_IMAGE_PROXY_URL \
-    npm run build
+    pnpm run build
 
 FROM nginx:alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
