@@ -3,9 +3,9 @@ FROM node:20-alpine AS frontend-builder
 WORKDIR /app
 # Install pnpm
 RUN npm install -g pnpm
-COPY package*.json ./
+COPY package*.json pnpm-lock.yaml ./
 ENV ROLLUP_SKIP_NODE_RESOLVE=true
-RUN pnpm install --frozen-lockfile --platform=linux --arch=x64
+RUN pnpm install --frozen-lockfile
 COPY . .
 ARG VITE_STORAGE_MODE=remote
 ARG VITE_API_URL=
@@ -28,6 +28,7 @@ RUN apk add --no-cache python3 make g++
 RUN npm install -g pnpm
 
 COPY api/package*.json ./
+COPY pnpm-lock.yaml ./
 
 # Install dependencies without bcrypt
 RUN pnpm install --frozen-lockfile --prod --ignore-scripts
