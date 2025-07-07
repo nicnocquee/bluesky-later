@@ -1,10 +1,11 @@
 # Stage 1: Build frontend
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app
-COPY package*.json ./
+# Install pnpm
+RUN npm install -g pnpm
+COPY package*.json pnpm-lock.yaml ./
 ENV ROLLUP_SKIP_NODE_RESOLVE=true
-RUN npm ci --legacy-peer-deps --platform=linux --arch=x64 \
-    && npm rebuild @rollup/rollup-linux-x64-gnu
+RUN pnpm install --frozen-lockfile
 COPY . .
 ARG VITE_STORAGE_MODE=remote
 ARG VITE_API_URL=
@@ -14,24 +15,29 @@ RUN VITE_STORAGE_MODE=$VITE_STORAGE_MODE \
     VITE_API_URL=$VITE_API_URL \
     VITE_METADATA_FETCHER_URL=$VITE_METADATA_FETCHER_URL \
     VITE_IMAGE_PROXY_URL=$VITE_IMAGE_PROXY_URL \
-    npm run build
+    pnpm run build
 
 # Stage 2: Build API
 FROM --platform=$BUILDPLATFORM node:20-alpine AS api-builder
 WORKDIR /app
-COPY api/package*.json ./
 
 # Install build dependencies
 RUN apk add --no-cache python3 make g++
 
+# Install pnpm
+RUN npm install -g pnpm
+
+COPY api/package*.json ./
+COPY pnpm-lock.yaml ./
+
 # Install dependencies without bcrypt
-RUN npm ci --legacy-peer-deps --production --ignore-scripts
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
 # Install and build bcrypt separately
-RUN npm install bcrypt --build-from-source
+RUN pnpm add bcrypt --build-from-source
 
 COPY api .
-RUN npm run build
+RUN pnpm run build
 
 # Stage 3: Final image
 FROM node:20-alpine
@@ -96,8 +102,11 @@ COPY --from=api-builder /app/dist ./dist
 COPY --from=api-builder /app/node_modules ./node_modules
 COPY --from=api-builder /app/package.json ./package.json
 
+# Install pnpm
+RUN npm install -g pnpm
+
 # Rebuild bcrypt in the final stage
-RUN npm rebuild bcrypt --build-from-source
+RUN pnpm rebuild bcrypt --build-from-source
 
 # Set permissions
 RUN chown -R nginx:nginx /usr/share/nginx/html /app/api
